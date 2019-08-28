@@ -7,9 +7,11 @@ tags: [web scraping, data cleaning, introduction]
 comments: true
 ---
 
-Syntax highlighting is a feature that displays source code, in different colors and fonts according to the category of terms. This feature facilitates writing in a structured language such as a programming language or a markup language as both structures and syntax errors are visually distinct. Highlighting does not affect the meaning of the text itself; it is intended only for human readers.[^1]
+A basic skin care routine involves applying products such as facial cleansers, toners and moisturisers. However, many users face problems choosing products that suit them. 
+In this post, I will bring you through how to build a recommender system based on content based filtering and collaborative filtering to solve this issue. 
+Using data from sephora.com, the system recommends a skin care product based on products that a user has liked, or what category of product the user is presently searching for.
 
-[^1]: <http://en.wikipedia.org/wiki/Syntax_highlighting>
+
 
 ### Highlighted Code Blocks
 
