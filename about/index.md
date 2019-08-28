@@ -1,37 +1,20 @@
 ---
 layout: page
-title: About the Theme
+title: 'About me'
 tags: [about, Jekyll, theme, moon]
-date: 2016-03-21
+date: 2019-8-21
 comments: false
 ---
     
-<center><a href="http://taylantatli.github.io/Moon"><b>Moon</b></a> is a minimal, one column jekyll theme.</center>
+<center>A Data scientist/analyst with the ability to derive actionable insights from data. Passionate about discovering the science and laws of everyday life and committed to help building better futures for individuals.</center>
 
-## Features
-* Minimal, you can focus on your content
-* Responsive
-* Disqus integration
-* Syntax highlighting
-* Optional post image
-* Social icons
-* Page for sharing projects
-* Optional background image
-* Simple navigation menu
-* MathJax support
+## Educations
+* Data Science Immersive Program in General Assembly (2019)
+* Bachelor Degree of Statistics in NUS (2014 - 2018)
+* NUS High School of Math & Science (2009 - 2013)
 
-## Preview
 
-{% capture images %}
-    https://cloud.githubusercontent.com/assets/754514/14509720/61c61058-01d6-11e6-93ab-0918515ecd56.png
-    https://cloud.githubusercontent.com/assets/754514/14509716/61ac6c8e-01d6-11e6-879f-8308883de790.png
-{% endcapture %}
-{% include gallery images=images caption="Screenshots of Moon Theme" cols=2 %}
+## Working Experience
+* Management traniee in Haidilao Dining Pte. Ltd (2018 - 2019)
+* Financial vertical intern in Nielsen (2017)
 
-See a [live version of Moon](http://taylantatli.github.io/Moon) hosted on GitHub.
-
-## Getting Started
-
-To learn how to install and use this theme check out the [Setup Guide](http://taylantatli.me/Moon/moon-theme/) for more information.
-      
-[Install Moon](https://github.com/TaylanTatli/Moon){: .btn}
