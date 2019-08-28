@@ -1,9 +1,9 @@
 ---
 layout: post
-title: Syntax Highlighting Post
-date: 2013-08-16
-excerpt: "Demo post displaying the various ways of highlighting code in Markdown."
-tags: [sample post, code, highlighting]
+title: Recommender System: Skin Care Products (Part 1)
+date: 2019-08-21
+excerpt: "Web scraping and data cleaning"
+tags: [web scraping, data cleaning, introduction]
 comments: true
 ---
 
