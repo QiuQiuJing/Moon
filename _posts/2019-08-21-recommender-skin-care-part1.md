@@ -27,7 +27,7 @@ In this post, I will walk through the first part and second part.
 
 
 
-## Web scraping and data collection
+## Web craping and data collection
 All data are scraped from [sephora.com](https://www.sephora.com). There are two parts of information are needed to build recommender system:
 
 * **Product basic information**: includes basic product information such as categories, brands, product names, ingredients, prices, sizes, ratings, descriptions and pictures
@@ -147,7 +147,7 @@ After completing the scraping for product information, we are going to scrape us
 However, by default only 6 reviews are shown in product review box, and each additional click reveals 6 more reviews. Given that some products have thousands of reviews, doing the clicking manually would be too tedious!
 <figure>
   <a href="https://miro.medium.com/max/3972/1*0DjcD6zyy6AH1ttCeHistQ.png"><img src="https://miro.medium.com/max/3972/1*0DjcD6zyy6AH1ttCeHistQ.png"></a>
-  <figcaption>A typical user review</figcaption>
+  <figcaption><a>A typical user review</a></figcaption>
 </figure>
 Being a clever data scientist, I wrote a function to automate the clicking until all reviews were revealed :)
 Also, since some reviews may have missing information like headers, we filled in all blank fields with NaN to ensure that each column has same length.
@@ -240,105 +240,78 @@ for i in range(len(df)):
 
 
 
+## Data cleaning and pre-processing
+Now that we have collected the data, the next step would be cleaning and pre-processing!
+### (1) Product information
+* drop bundled products, and those with NaN fields,
+* remove the “$” sign to convert price to float,
+* find products have identical names and reassign them to a new name,
+* manually fill in sizes and ingredients for some products and clean them.
 
-
-
-
-
-
-{% highlight html %}
-{% raw %}
-<nav class="pagination" role="navigation">
-    {% if page.previous %}
-        <a href="{{ site.url }}{{ page.previous.url }}" class="btn" title="{{ page.previous.title }}">Previous article</a>
-    {% endif %}
-    {% if page.next %}
-        <a href="{{ site.url }}{{ page.next.url }}" class="btn" title="{{ page.next.title }}">Next article</a>
-    {% endif %}
-</nav><!-- /.pagination -->
-{% endraw %}
+In order to compare prices for products better, we create a new feature:
+`price_oz`: product price per oz
+{% highlight python %}
+#based on size and price of product, add a new column price per oz called price_oz
+price=[]
+for i in index:
+    num = df.price[i]/df.oz[i]
+    price.append(num)
+df = df.assign(price_oz = price)
 {% endhighlight %}
 
-{% highlight ruby %}
-module Jekyll
-  class TagIndex < Page
-    def initialize(site, base, dir, tag)
-      @site = site
-      @base = base
-      @dir = dir
-      @name = 'index.html'
-      self.process(@name)
-      self.read_yaml(File.join(base, '_layouts'), 'tag_index.html')
-      self.data['tag'] = tag
-      tag_title_prefix = site.config['tag_title_prefix'] || 'Tagged: '
-      tag_title_suffix = site.config['tag_title_suffix'] || '&#8211;'
-      self.data['title'] = "#{tag_title_prefix}#{tag}"
-      self.data['description'] = "An archive of posts tagged #{tag}."
-    end
-  end
-end
+### (2) User review
+For user reviews, we drop rows that have no user name, missing review field, and duplicate entries. Also, we add a new column for each review:
+`id`: Product id, which is the index number for product ininformation dataset
+{% highlight python %}
+#drop rows that dont have username or reviews
+review.dropna(subset=['user', 'long_review'], inplace = True)
+#drop deplicated reviews
+review.drop_duplicates(subset = ['long_review'],inplace = True)
+#assign id number to each review
+l = []
+n = 0
+for i in range(len(review)):
+    try:
+        if review.name[i] == review.name[i+1]:
+            l.append(n)
+        else:
+            l.append(n)
+            n = n+1
+    except KeyError:
+        l.append(n)
+review['id'] = l
+{% endhighlight %}
+
+After completing data cleaning, we have a total of **281** products from **three** categories and **137,685** reviews from **110,604** users.
+
+### (3) Repurchase rate
+Based on user review dataset, we calculate the **repurchase rate**. Repurchase rate is a strong indication of user satisfaction with the product.
+
+* `Product`: Product name
+* `total`: Total number of purchase
+* `repurchse`: Number of repurchase orders
+* `rate`: Repurchase rate
+
+{% highlight python %}
+l = []
+l1 = []
+l2 = []
+l3 = []
+for i in range(281):
+    frequency = review[review.id == i].user.value_counts()
+    total = len(frequency)
+    repurchase = sum([1 for i in frequency if i >1])
+    rate = repurchase/total
+    name = list(review[review.id == i].full_name)[0]   
+    l.append(name)
+    l1.append(total)
+    l2.append(repurchase)
+    l3.append(rate)    
+df_repurchase = pd.DataFrame({'product': l, 'total':l1,'repurchase': l2, 'rate': l3})
 {% endhighlight %}
 
 
-### Standard Code Block
-
-    {% raw %}
-    <nav class="pagination" role="navigation">
-        {% if page.previous %}
-            <a href="{{ site.url }}{{ page.previous.url }}" class="btn" title="{{ page.previous.title }}">Previous article</a>
-        {% endif %}
-        {% if page.next %}
-            <a href="{{ site.url }}{{ page.next.url }}" class="btn" title="{{ page.next.title }}">Next article</a>
-        {% endif %}
-    </nav><!-- /.pagination -->
-    {% endraw %}
+In this post, I talked about data collection and data cleaning. I will continue rest of parts on how to build a hybrid recommender system for skin care products.
 
 
-### Fenced Code Blocks
 
-To modify styling and highlight colors edit `/assets/css/syntax.css`. Line numbers and a few other things can be modified in `_config.yml`. Consult [Jekyll's documentation](http://jekyllrb.com/docs/configuration/) for more information.
-
-~~~ css
-#container {
-    float: left;
-    margin: 0 -240px 0 0;
-    width: 100%;
-}
-~~~
-
-~~~ html
-{% raw %}<nav class="pagination" role="navigation">
-    {% if page.previous %}
-        <a href="{{ site.url }}{{ page.previous.url }}" class="btn" title="{{ page.previous.title }}">Previous article</a>
-    {% endif %}
-    {% if page.next %}
-        <a href="{{ site.url }}{{ page.next.url }}" class="btn" title="{{ page.next.title }}">Next article</a>
-    {% endif %}
-</nav><!-- /.pagination -->{% endraw %}
-~~~
-
-~~~ ruby
-module Jekyll
-  class TagIndex < Page
-    def initialize(site, base, dir, tag)
-      @site = site
-      @base = base
-      @dir = dir
-      @name = 'index.html'
-      self.process(@name)
-      self.read_yaml(File.join(base, '_layouts'), 'tag_index.html')
-      self.data['tag'] = tag
-      tag_title_prefix = site.config['tag_title_prefix'] || 'Tagged: '
-      tag_title_suffix = site.config['tag_title_suffix'] || '&#8211;'
-      self.data['title'] = "#{tag_title_prefix}#{tag}"
-      self.data['description'] = "An archive of posts tagged #{tag}."
-    end
-  end
-end
-~~~
-
-### GitHub Gist Embed
-
-An example of a Gist embed below.
-
-{% gist mmistakes/6589546 %}
