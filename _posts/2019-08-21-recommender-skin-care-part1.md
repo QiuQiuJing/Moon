@@ -28,16 +28,18 @@ In this post, I will walk through the first part and second part.
 
 
 ## Web scraping and data collection
-All data are scraped from [sephora.com](). There are two parts of information are needed to build recommender system:
+All data are scraped from [sephora.com](https://www.sephora.com). There are two parts of information are needed to build recommender system:
 
-* **Product basic information**: categories, brands, product names, ingredients, prices, sizes, ratings, descriptions and pictures
-* **User reviews**: user names, ratings, reviews, time and helpfulness
+* **Product basic information**: includes basic product information such as categories, brands, product names, ingredients, prices, sizes, ratings, descriptions and pictures
+* **User reviews**: includes user feedbacks for all products such as user names, ratings, reviews, time and helpfulness
 
-I use [**Selenium with python**](https://selenium-python.readthedocs.io/), because web pages are not static and need to interact with them.
+I use [Selenium with python](https://selenium-python.readthedocs.io/), because web pages are not static and need to interact with them.
 
 ### (1) Urls for products
 In this post, I choose three categories for skin care products, which are facial cleanser, toners and moisturisers. First, in each category, 
-I scarp links for all selected products and create a dataframe with two features `category` and `url`.
+I scarp links for all selected products and create a dataframe with two features:
+* `Category`: Three product categories
+* `URL`: Product urls
 
 {% highlight python %}
 #step 1 
@@ -83,8 +85,7 @@ Second, using products urls, I scarp basic informations for all products. The fe
 {% highlight python %}
 #step 2
 #scrape product brands, names, ratings, prices, descriptions, ingredients and pictures
-df_info = pd.DataFrame(columns=['brand', 'name', 'rating', 'price',
-                                'descriptions', 'ingredients','pic','productsize'])
+df_info = pd.DataFrame(columns=['brand', 'name', 'rating', 'price', 'descriptions', 'ingredients','pic','productsize'])
 df = pd.concat([df, df_info], axis = 1)
 driver = webdriver.Chrome('./chromedriver')
 for i in range(len(df)):
@@ -138,6 +139,103 @@ for i in range(len(df)):
     except NoSuchElementException:
         s = driver.find_element_by_class_name('css-1qf1va5').text
         df.productsize[i] = s
+{% endhighlight %}
+
+### (3) User reviews
+After completing the scraping for product information, we are going to scrape user ratings and reviews. 
+
+However, by default only 6 reviews are shown in product review box, and each additional click reveals 6 more reviews. Given that some products have thousands of reviews, doing the clicking manually would be too tedious!
+<figure>
+  <a href="https://miro.medium.com/max/3972/1*0DjcD6zyy6AH1ttCeHistQ.png"><img src="https://miro.medium.com/max/3972/1*0DjcD6zyy6AH1ttCeHistQ.png"></a>
+  <figcaption>A typical user review</figcaption>
+</figure>
+Being a clever data scientist, I wrote a function to automate the clicking until all reviews were revealed :)
+Also, since some reviews may have missing information like headers, we filled in all blank fields with NaN to ensure that each column has same length.
+
+{% highlight python %}
+def click(x): 
+    try:
+        driver.find_element_by_class_name(x).click()
+        time.sleep(0.2)
+        click(x)
+    except ElementNotVisibleException:
+        driver.find_element_by_class_name('css-fslzaf').click()
+        click(x)
+    except NoSuchElementException:
+        pass
+    
+def fillin(rawlist,infolist):
+    for i in range(len(infolist)):
+        if str(infolist[i]) in str(rawlist[i]):
+            pass
+        else:
+            infolist.insert(i,np.nan)
+    while len(infolist) < len(rawlist):
+        infolist.append(np.nan) 
+{% endhighlight %}
+
+Next, I will use `URL` again to scrap user reviews for all products and save them to a dataframe. For this dataset, it consists features which are:
+* `Category`: Three product categories
+* `brand`: Product brand 
+* `name`: Product name
+* `user`: User name
+* `stars`: User rating, range from 1 to 5
+* `short_review`: User's short review, usually just one sentence
+* `long_review`: User's full review
+* `helpfulness`: helpfulness of review, voted by other users
+* `time`: Time posted
+
+{% highlight python %}
+review = pd.DataFrame(columns=['Category','brand', 'name', 'user', 'stars','short_review', 'long_review','helpfulness','time'])
+driver = webdriver.Chrome('./chromedriver')
+for i in range(len(df)):
+    driver.get(df.URL[i])
+    time.sleep(4)     
+    #create a dataframe
+    df_review = pd.DataFrame(columns=['Category','brand', 'name', 'user', 'stars','short_review', 'long_review','helpfulness','time'])
+    #scroll page down and let review boxes show
+    no_of_pagedowns = 5
+    while no_of_pagedowns:
+        elem = driver.find_element_by_tag_name("body")
+        elem.send_keys(Keys.PAGE_DOWN)
+        time.sleep(0.5)
+        no_of_pagedowns-=1
+    time.sleep(4)
+    start_time = time.time()
+    click('css-1phfyoj')
+    print(time.time()-start_time)
+    #user profile
+    up = [e.text for e in driver.find_elements_by_class_name('css-81z9n1')][1:-2]   
+    #user review
+    ur = [e.text for e in driver.find_elements_by_class_name('css-12yc2vd')]    
+    #user name
+    name =  [e.text for e in driver.find_elements_by_class_name('css-10n46hy')]
+    #fill in missing user name with nan
+    fillin(up,name)    
+    #get stars 
+    stars = [int(e.get_attribute('aria-label')[0]) for e in driver.find_elements_by_class_name('css-5quttm')]    
+    #short review
+    sr = [e.text for e in driver.find_elements_by_class_name('css-ai9pjd')]
+    #fill in missing values with nan
+    fillin(ur,sr)    
+    #long review
+    lr = [e.text for e in driver.find_elements_by_class_name('css-1p4f59m')]    
+    #helpfulness 
+    h = [e.text for e in driver.find_elements_by_class_name('css-39esqn')]
+    helpfulness=[int(re.findall('(\d+)',e)[1]) for e in h] 
+    #time posted
+    t = [e.text for e in driver.find_elements_by_class_name('css-1mfxbmj')]
+    
+    df_review.user = name
+    df_review.stars = stars
+    df_review.short_review = sr
+    df_review.long_review = lr
+    df_review.helpfulness = helpfulness
+    df_review.time = t    
+    df_review.loc[:,'Category'] = df.Category[i]
+    df_review.loc[:,'brand'] = df.brand[i]
+    df_review.loc[:,'name'] = df.name[i]    
+    review = pd.concat([review,df_review])
 {% endhighlight %}
 
 
