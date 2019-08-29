@@ -19,7 +19,7 @@ Using data from sephora.com, the system recommends a skin care product based on 
 
 To modify styling and highlight colors edit `/assets/css/syntax.css`.
 
-{% highlight ruby %}
+{% highlight python %}
 #step 1 
 #Get url for product in each category
 driver = webdriver.Chrome('./chromedriver')
