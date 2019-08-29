@@ -23,10 +23,17 @@ Using data from sephora.com, the system recommends a skin care product based on 
 4. Collaborative filtering
 5. Aggregation and recommendation
 
+In this post, I am going to walk through the first part and second part.
+
 
 
 ## Web scraping and data collection
-All data are collected from sephora.com 
+All data are scraped from sephora.com. There are two parts of information are needed to build recommender system:
+
+1. **Product basic information**: 
+2. **User reviews**:
+
+I use **Selenium** because the web pages are not static 
 
 To modify styling and highlight colors edit `/assets/css/syntax.css`.
 
