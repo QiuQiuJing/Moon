@@ -18,11 +18,16 @@ Using data from sephora.com, the system recommends a skin care product based on 
 To modify styling and highlight colors edit `/assets/css/syntax.css`.
 
 {% highlight css %}
-#container {
-    float: left;
-    margin: 0 -240px 0 0;
-    width: 100%;
-}
+#step 1 
+#Get url for product in each category
+driver = webdriver.Chrome('./chromedriver')
+
+#Categories include facial cleanser, toner and moisturizer
+productcat = ['face-wash-facial-cleanser', 'facial-toner-skin-toner', 'moisturizer-skincare']
+
+#create a dataframe
+df = pd.DataFrame(columns=['Category', 'URL'])
+
 {% endhighlight %}
 
 {% highlight html %}
