@@ -7,7 +7,7 @@ tags: [web scraping, data cleaning, introduction]
 comments: false
 ---
 
-### Introduction
+## Introduction
 A basic skin care routine involves applying products such as facial cleansers, toners and moisturisers. However, many users face problems choosing products that suit them. 
 In this post, I will bring you through how to build a recommender system based on:
 * **content-based filtering method**
@@ -28,12 +28,12 @@ In this post, I will walk through the first part and second part.
 
 
 ## Web scraping and data collection
-All data are scraped from sephora.com. There are two parts of information are needed to build recommender system:
+All data are scraped from [sephora.com](). There are two parts of information are needed to build recommender system:
 
 1. **Product basic information**: categories, brands, product names, ingredients, prices, sizes, descriptions and pictures
 2. **User reviews**: user names, ratings, reviews, time and helpfulness
 
-I use **Selenium** in python, because web pages are not static and need to interact with them.
+I use [**Selenium with python**](https://selenium-python.readthedocs.io/), because web pages are not static and need to interact with them.
 
 ### (1) URL 
 In this post, I choose three categories for skin care products, which are facial cleanser, toners and moisturisers. First, in each category, 
@@ -47,11 +47,10 @@ driver = webdriver.Chrome('./chromedriver')
 productcat = ['face-wash-facial-cleanser', 'facial-toner-skin-toner', 'moisturizer-skincare']
 #create a dataframe
 df = pd.DataFrame(columns=['Category', 'URL'])
-
+#urls for all products
 for cat in productcat:
     driver.get('https://www.sephora.com/shop/'+cat+'?pageSize=300')
     time.sleep(1)
-
     elem = driver.find_element_by_tag_name("body")
     #scroll page down to deal with lazy-load webpages
     no_of_pagedowns = 10
@@ -61,15 +60,12 @@ for cat in productcat:
         no_of_pagedowns-=1
     #find url
     pi = driver.find_elements_by_class_name("css-ix8km1")
-
     producturl = []
     for a in pi:
         subURL = a.get_attribute('href')
-        producturl.append(subURL)
-    
+        producturl.append(subURL)    
     dic = {'Category': cat, 'URL': producturl}
     df = df.append(pd.DataFrame(dic), ignore_index = True)
-
 {% endhighlight %}
 
 {% highlight html %}
