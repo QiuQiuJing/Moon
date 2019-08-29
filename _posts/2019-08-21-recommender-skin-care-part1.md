@@ -15,15 +15,15 @@ In this post, I will bring you through how to build a recommender system based o
 
 Using data from sephora.com, the system recommends a skin care product based on products that a user has liked, or what category of product the user is presently searching for.
 
-### Outline
 
-1. Web scraping and data collection
-2. Data cleaning and pre-processing
-3. Content-based filtering
-4. Collaborative filtering
-5. Aggregation and recommendation
+Here is the outline: 
+**1. Web scraping and data collection
+**2. Data cleaning and pre-processing
+**3. Content-based filtering
+**4. Collaborative filtering
+**5. Aggregation and recommendation**
 
-In this post, I am going to walk through the first part and second part.
+In this post, I will walk through the first part and second part.
 
 
 
