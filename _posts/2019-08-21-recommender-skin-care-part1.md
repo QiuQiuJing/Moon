@@ -17,11 +17,11 @@ Using data from sephora.com, the system recommends a skin care product based on 
 
 
 Here is the outline: 
-**1. Web scraping and data collection**
-**2. Data cleaning and pre-processing**
-**3. Content-based filtering**
-**4. Collaborative filtering**
-**5. Aggregation and recommendation**
+1. **Web scraping and data collection**
+2. **Data cleaning and pre-processing**
+3. **Content-based filtering**
+4. **Collaborative filtering**
+5. **Aggregation and recommendation**
 
 In this post, I will walk through the first part and second part.
 
@@ -30,12 +30,12 @@ In this post, I will walk through the first part and second part.
 ## Web scraping and data collection
 All data are scraped from [sephora.com](). There are two parts of information are needed to build recommender system:
 
-1. **Product basic information**: categories, brands, product names, ingredients, prices, sizes, descriptions and pictures
-2. **User reviews**: user names, ratings, reviews, time and helpfulness
+* **Product basic information**: categories, brands, product names, ingredients, prices, sizes, ratings, descriptions and pictures
+* **User reviews**: user names, ratings, reviews, time and helpfulness
 
 I use [**Selenium with python**](https://selenium-python.readthedocs.io/), because web pages are not static and need to interact with them.
 
-### (1) URL 
+### (1) Urls for products
 In this post, I choose three categories for skin care products, which are facial cleanser, toners and moisturisers. First, in each category, 
 I scarp links for all selected products and create a dataframe with two features `category` and `url`.
 
@@ -67,6 +67,86 @@ for cat in productcat:
     dic = {'Category': cat, 'URL': producturl}
     df = df.append(pd.DataFrame(dic), ignore_index = True)
 {% endhighlight %}
+
+### (2) Product informations
+Second, using products urls, I scarp basic informations for all products. The features are 
+* `brand`: Product brand 
+* `name`: Product name
+* `rating`: Overall rating for products
+* `price`: Product price (us dollars) 
+* `descriptions`: Product description
+* `ingredients`: Product full ingredients, a list of chemicals 
+* `pic`: Urls for product pictures 
+* `productsize`: Product size (oz)
+
+
+{% highlight python %}
+#step 2
+#scrape product brands, names, ratings, prices, descriptions, ingredients and pictures
+df_info = pd.DataFrame(columns=['brand', 'name', 'rating', 'price',
+                                'descriptions', 'ingredients','pic','productsize'])
+df = pd.concat([df, df_info], axis = 1)
+driver = webdriver.Chrome('./chromedriver')
+for i in range(len(df)):
+    driver.get(df.URL[i])
+    time.sleep(5)
+    #close ads window
+    try:
+        driver.find_element_by_class_name('css-fslzaf').click()
+    except ElementNotVisibleException:
+        pass
+    except NoSuchElementException:
+        pass
+    #product brand and name
+    item = driver.find_element_by_class_name('css-a1jw00').text.split('\n')
+    df.brand[i] = item[0]
+    df.name[i] = item[1]    
+    #price
+    df.price[i] = driver.find_element_by_class_name('css-14hdny6').text
+    #descriptions
+    df.descriptions[i]= driver.find_element_by_class_name('css-1rny024').text
+    #one page down
+    elem = driver.find_element_by_tag_name("body")
+    elem.send_keys(Keys.PAGE_DOWN)
+    time.sleep(1)
+    #ingredient
+    #we need to click ingredient tab in product infomation table to get the text
+    driver.find_element_by_id('tab2').click()
+    df.ingredients[i] = driver.find_element_by_id('tabpanel2').text    
+    #scoll down so the website will show rating and review box
+    no_of_pagedowns = 3
+    while no_of_pagedowns:
+        elem = driver.find_element_by_tag_name("body")
+        elem.send_keys(Keys.PAGE_DOWN)
+        time.sleep(1)
+        no_of_pagedowns-=1    
+    #rating 
+    #there may be some product don't have ratings 
+    try:
+        ra = driver.find_element_by_class_name('css-1eqf5yr').text
+        df.rating[i] = float(ra.split(' / ')[0])
+    except NoSuchElementException:
+        df.rating[i] = np.nan    
+    #pic
+    driver.find_element_by_class_name('css-1juuxmf').click()
+    time.sleep(1)
+    df.pic[i] = driver.find_element_by_class_name('css-1glglyy').get_attribute('src')   
+    #productsize
+    try:
+        s = driver.find_element_by_class_name('css-12wl10d').text
+        df.productsize[i] = s    
+    except NoSuchElementException:
+        s = driver.find_element_by_class_name('css-1qf1va5').text
+        df.productsize[i] = s
+{% endhighlight %}
+
+
+
+
+
+
+
+
 
 {% highlight html %}
 {% raw %}
