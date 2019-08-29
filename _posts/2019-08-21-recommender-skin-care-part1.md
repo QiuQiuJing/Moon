@@ -30,12 +30,14 @@ In this post, I am going to walk through the first part and second part.
 ## Web scraping and data collection
 All data are scraped from sephora.com. There are two parts of information are needed to build recommender system:
 
-1. **Product basic information**: 
-2. **User reviews**:
+1. **Product basic information**: categories, brands, product names, ingredients, prices, sizes, descriptions and pictures
+2. **User reviews**: user names, ratings, reviews, time and helpfulness
 
-I use **Selenium** because the web pages are not static 
+I use **Selenium** in python, because web pages are not static and need to interact with them.
 
-To modify styling and highlight colors edit `/assets/css/syntax.css`.
+### (1) URL 
+In this post, I choose three categories for skin care products, which are facial cleanser, toners and moisturisers. First, in each category, 
+I scarp links for all selected products and create a dataframe with two features `category` and `url`.
 
 {% highlight python %}
 #step 1 
