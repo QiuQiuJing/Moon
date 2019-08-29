@@ -4,7 +4,7 @@ title: "Recommender System: Skin Care Products (Part 1)"
 date: 2019-08-21
 excerpt: "Web scraping and data cleaning"
 tags: [web scraping, data cleaning, introduction]
-comments: true
+comments: false
 ---
 
 A basic skin care routine involves applying products such as facial cleansers, toners and moisturisers. However, many users face problems choosing products that suit them. 
@@ -17,7 +17,7 @@ Using data from sephora.com, the system recommends a skin care product based on 
 
 To modify styling and highlight colors edit `/assets/css/syntax.css`.
 
-{% highlight css %}
+{% highlight ruby %}
 #step 1 
 #Get url for product in each category
 driver = webdriver.Chrome('./chromedriver')
