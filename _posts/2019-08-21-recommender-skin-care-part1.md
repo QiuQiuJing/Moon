@@ -17,10 +17,10 @@ Using data from sephora.com, the system recommends a skin care product based on 
 
 
 Here is the outline: 
-**1. Web scraping and data collection
-**2. Data cleaning and pre-processing
-**3. Content-based filtering
-**4. Collaborative filtering
+**1. Web scraping and data collection**
+**2. Data cleaning and pre-processing**
+**3. Content-based filtering**
+**4. Collaborative filtering**
 **5. Aggregation and recommendation**
 
 In this post, I will walk through the first part and second part.
@@ -43,10 +43,8 @@ I scarp links for all selected products and create a dataframe with two features
 #step 1 
 #Get url for product in each category
 driver = webdriver.Chrome('./chromedriver')
-
 #Categories include facial cleanser, toner and moisturizer
 productcat = ['face-wash-facial-cleanser', 'facial-toner-skin-toner', 'moisturizer-skincare']
-
 #create a dataframe
 df = pd.DataFrame(columns=['Category', 'URL'])
 
@@ -55,14 +53,12 @@ for cat in productcat:
     time.sleep(1)
 
     elem = driver.find_element_by_tag_name("body")
-    
     #scroll page down to deal with lazy-load webpages
     no_of_pagedowns = 10
     while no_of_pagedowns:
         elem.send_keys(Keys.PAGE_DOWN)
         time.sleep(0.2)
         no_of_pagedowns-=1
-    
     #find url
     pi = driver.find_elements_by_class_name("css-ix8km1")
 
