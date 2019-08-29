@@ -10,14 +10,23 @@ comments: false
 ### Introduction
 A basic skin care routine involves applying products such as facial cleansers, toners and moisturisers. However, many users face problems choosing products that suit them. 
 In this post, I will bring you through how to build a recommender system based on:
-1. _content-based filtering method_
-2. _collaborative filtering method_
+* **content-based filtering method**
+* **collaborative filtering method**
 
 Using data from sephora.com, the system recommends a skin care product based on products that a user has liked, or what category of product the user is presently searching for.
 
+### Outline
+
+1. Web scraping and data collection
+2. Data cleaning and pre-processing
+3. Content-based filtering
+4. Collaborative filtering
+5. Aggregation and recommendation
 
 
-### Highlighted Code Blocks
+
+## Web scraping and data collection
+All data are collected from sephora.com 
 
 To modify styling and highlight colors edit `/assets/css/syntax.css`.
 
