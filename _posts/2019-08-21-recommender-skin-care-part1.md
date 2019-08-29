@@ -8,7 +8,9 @@ comments: false
 ---
 
 A basic skin care routine involves applying products such as facial cleansers, toners and moisturisers. However, many users face problems choosing products that suit them. 
-In this post, I will bring you through how to build a recommender system based on content based filtering and collaborative filtering to solve this issue. 
+In this post, I will bring you through how to build a recommender system based on:
+1. content-based filtering method
+2. collaborative filtering method
 Using data from sephora.com, the system recommends a skin care product based on products that a user has liked, or what category of product the user is presently searching for.
 
 
@@ -27,6 +29,30 @@ productcat = ['face-wash-facial-cleanser', 'facial-toner-skin-toner', 'moisturiz
 
 #create a dataframe
 df = pd.DataFrame(columns=['Category', 'URL'])
+
+for cat in productcat:
+    driver.get('https://www.sephora.com/shop/'+cat+'?pageSize=300')
+    time.sleep(1)
+
+    elem = driver.find_element_by_tag_name("body")
+    
+    #scroll page down to deal with lazy-load webpages
+    no_of_pagedowns = 10
+    while no_of_pagedowns:
+        elem.send_keys(Keys.PAGE_DOWN)
+        time.sleep(0.2)
+        no_of_pagedowns-=1
+    
+    #find url
+    pi = driver.find_elements_by_class_name("css-ix8km1")
+
+    producturl = []
+    for a in pi:
+        subURL = a.get_attribute('href')
+        producturl.append(subURL)
+    
+    dic = {'Category': cat, 'URL': producturl}
+    df = df.append(pd.DataFrame(dic), ignore_index = True)
 
 {% endhighlight %}
 
