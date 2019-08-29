@@ -5,6 +5,7 @@ date: 2019-08-21
 excerpt: "Web scraping and data cleaning"
 tags: [web scraping, data cleaning, introduction]
 comments: false
+feature: 'assets/img/part1'
 ---
 
 ## Introduction
