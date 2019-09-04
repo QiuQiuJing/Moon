@@ -60,23 +60,89 @@ after trying both approaches, we find that unigram is more suitable for some fea
   <figcaption><a>cleanliness score for combination of unigram and bigram</a></figcaption>
 </figure>
 
+Lastly, for *mildness*, we collect chemicals with soothing effect and chemicals with irritancy effects. Based on that, define a function to determine the mildness score of product. This also consider as a simple **sentiment analysis** for product ingredients.
 
+{% highlight python %}
+#part 2 sentiment analysis for soothing and irritancy 
+#in this case, we will treat soothing as positive and irritancy as negetive
+#use combination of unigram and bigram
+def simple_sentiment(ingredient):
+    # positive/negative 
+    index1 = df_feature[df_feature['feature'] == 'soothing'].index.values[0]
+    index2 = df_feature[df_feature['feature'] == 'irritancy'].index.values[0]
+    positive = df_feature.chemicals_unibi[index1]
+    negative = df_feature.chemicals_unibi[index2]
+    # Count 
+    positive_count = sum([1 for i in ingredient if i in positive])
+    negative_count = sum([1 for i in ingredient if i in negative])
+    # Calculate Sentiment Percentage 
+    # (Positive Count - Negative Count) / (Total Count)
+    return round((positive_count - negative_count) / len(ingredient), 6)
+#mildness score 　
+l = []
+for ingre in df1.uni_bigram:
+    score = simple_sentiment(ingre)
+    l.append(score)
+df1.loc[:,'mildness'] = l 
+{% endhighlight %}
 
-
-
-
-
-
-
-
+### (2) Similarity
 From that, we construct features scores for all the products using **Jaccard similarity**. Note that the order of ingredients matters. The chemicals that appear first have higher concentrations in the products.
 
 {% highlight python %}
+#jaccard_similarity
+def jaccard_similarity(list1, list2):
+    s1 = set(list1)
+    s2 = set(list2)
+    return len(s1.intersection(s2)) / len(s1.union(s2))
+#using different method for different features
+feature_list_1 = ['moisturising effect','whitening','viscosity']
+feature_list_2 = ['cleanliness','antioxidant','fragrance']
+def ingre_similarity(product, feature, chemical):
+    for e in feature:
+        s = []
+        length = len(product)
+        n = df_feature[df_feature['feature'] == e].index.values[0]
 
+        for i in range(length):
+            score1 = jaccard_similarity(product[i][0:int(length/3)], chemical[n])  
+            score2 = jaccard_similarity(product[i][int(length/3):int(length*2/3)], chemical[n])
+            score3 = jaccard_similarity(product[i][int(length*2/3):length], chemical[n])
+            score = 0.5*score1 + 0.3*score2 +0.2*score3   
+            s.append(score)
+        df1[e] = s       
+ingre_similarity(df1.unigram, feature_list_1, df_feature.chemicals_uni)
+ingre_similarity(df1.uni_bigram, feature_list_2, df_feature.chemicals_unibi)
+{% endhighlight %}
 
+Next, we are going to concatenate all the scores to form and a new dataset and normalised them to the range of 0 to 1.
 
+{% highlight python %}
+product_score1 = df[['full_name','brand', 'Category','rating','price_oz']]
+product_score2 = df1[['moisturising effect','cleanliness','mildness','antioxidant','whitening','viscosity','fragrance']]
+product_score = pd.concat([product_score1, product_score2], axis = 1)
+#normalize tha score to the range of 0-1
+def norm(series):
+    l = []
+    for i in range(len(series)):
+        n = (series[i] - series.min()) / (series.max() - series.min())
+        l.append(n)
+    series = l
+features = ['price_oz','moisturising effect','cleanliness','mildness','antioxidant','whitening','viscosity','fragrance']
+for feature in features:
+    norm(series)
+    product_score[feature] = l
+{% endhighlight %}
 
+Finally, construct a content-based similarity matrix for products by using **Cosine similarity**.
 
+{% highlight python %}
+#exclude norminal features
+content = product_score.iloc[:,4:11]
+#content similarity matrix
+sim_matrix = cosine_similarity(content)
+content_sim = pd.DataFrame(sim_matrix, columns=content.index, index=content.index)
+{% endhighlight %}
 
 
 
