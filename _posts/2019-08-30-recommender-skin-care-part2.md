@@ -1,15 +1,30 @@
 ---
 layout: post
-title: "Recommender System: Skin Care Products (Part 1)"
-date: 2019-08-21
-excerpt: "Web scraping and data cleaning"
-tags: [web scraping, data cleaning, introduction]
+title: "Recommender System: Skin Care Products (Part 2)"
+date: 2019-08-30
+excerpt: "Content-based filtering and Collaborative filtering"
+tags: [Content-based filtering, Collaborative filtering, Recommender system]
 comments: false
 feature: 'assets/img/part1'
 ---
 
-## Introduction
-A basic skin care routine involves applying products such as facial cleansers, toners and moisturisers. Given the sheer number of products and brands in market, many users face problems choosing products that suit them. 
+In previous post, I've finished data collection and data cleaning. In this article, I will talk about how to build a hybrid recommender system with content-based filtering method and collaborative filtering method. 
+
+## Content-based filtering
+Content-based filtering allows the discovery of similarity between products based on item content. Customers ususally have certain preference on skin care products. For example, if some users like to use un-fragranced facial cleansers, they are less likely to buy fragranced toners.
+
+To build a content-based filtering system, we first create our own scoring system based on product **ingredients** and **price**. The features are:
+
+<figure>
+  <a href="assets/img/8features.png"><img src="assets/img/8features.png"></a>
+  <figcaption><a>8 features for content-based filtering method</a></figcaption>
+</figure>
+
+
+
+
+
+
 In this post, I will bring you through how to build a recommender system based on:
 * **content-based filtering method**
 * **collaborative filtering method**
