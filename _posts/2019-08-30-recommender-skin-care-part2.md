@@ -231,8 +231,8 @@ accuracy.rmse(test_pred)
 {% endhighlight %}
 
 Here are results for two method:
-**Algorithm | RMSE for Training Set | RMSE for Test Set**
------------- | ------------- | -------------
+Algorithm | RMSE for Training Set | RMSE for Test Set
+----------| ----------------------| -----------------
 **SVD** | 1.143683 | 1.151032
 **SVD++** | 1.145048 | 1.150734
 
