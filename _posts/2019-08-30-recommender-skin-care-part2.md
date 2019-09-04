@@ -231,10 +231,10 @@ accuracy.rmse(test_pred)
 {% endhighlight %}
 
 Here are results for two method:
-|Algorithm | RMSE for Training Set |   RMSE for Test Set   |
-|----------|-----------------------|-----------------------|
-| **SVD**  |       1.143683        |        1.151032       |
-|**SVD++** |       1.145048        |        1.150734       |
+| Algorithm | RMSE for Training Set |   RMSE for Test Set   |
+| --------- | --------------------- | --------------------- |
+|  **SVD**  |       1.143683        |        1.151032       |
+| **SVD++** |       1.145048        |        1.150734       |
 
 From the table above, we find out scores are qiute close for. Thus, I choose SVD since it has a simpler formula and takes less time to run compare to SVD++.
 {% highlight python %}
