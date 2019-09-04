@@ -53,7 +53,7 @@ for i in range(len(feature_list)):
     df_feature.chemicals_unibi[i] = l
 {% endhighlight %}
 
-after trying both approaches, we find that unigram is more suitable for some features while a combination of unigram and bigram is better for others. For example, *cleanliness* is better represented with the second approach.
+After trying both approaches, we find that unigram is more suitable for some features while a combination of unigram and bigram is better for others. For example, *cleanliness* is better represented with the second approach.
 
 <figure>
   <a href="https://miro.medium.com/max/2676/1*BpZ9l5ilYqbCXxHwxElPlg.png"><img src="https://miro.medium.com/max/2676/1*BpZ9l5ilYqbCXxHwxElPlg.png"></a>
@@ -206,8 +206,8 @@ accuracy.rmse(test_pred)
 {% endhighlight %}
 
 Results are:
-**Algorithm | RMSE for Training Set | RMSE for Test Set**
------------- | ------------- | -------------
+Algorithm | RMSE for Training Set | RMSE for Test Set
+----------| ----------------------| -----------------
 **SVD** | 1.143683 | 1.151032
 
 ### (2) SVD++
