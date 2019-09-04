@@ -10,7 +10,7 @@ feature: 'assets/img/part1'
 
 In previous post, I've finished data collection and data cleaning. In this article, I will talk about how to build a hybrid recommender system with content-based filtering method and collaborative filtering method. 
 
-## Content-based filtering
+## Content-based Filtering
 Content-based filtering allows the discovery of similarity between products based on item content. Customers ususally have certain preference on skin care products. For example, if some users like to use un-fragranced facial cleansers, they are less likely to buy fragranced toners.
 
 To build a content-based filtering system, we first create our own scoring system based on product **ingredients** and **price**. The features are:
@@ -24,7 +24,7 @@ For ingredient related features, first I search for lists of chemicals that prov
 
 <figure>
   <a href="https://miro.medium.com/max/792/1*N2lHAHtuUV5vAwj7OmVRpA.png"><img src="https://miro.medium.com/max/792/1*N2lHAHtuUV5vAwj7OmVRpA.png"></a>
-  <figcaption><a>table of chemicals</a></figcaption>
+  <figcaption><a></a></figcaption>
 </figure>
 
 ### (1) NLP
@@ -144,312 +144,163 @@ sim_matrix = cosine_similarity(content)
 content_sim = pd.DataFrame(sim_matrix, columns=content.index, index=content.index)
 {% endhighlight %}
 
+## Collaborative Filtering
+Collaborative filtering is a method of making predictions about the interests of a user by collecting preferences information from many users.
 
+In this part, we are going to use collaborative filtering method with user ratings. More specifically, we are going to find out the similarity between products from the user’s point of view. And it could recommend totally different products as compared to content based filtering. 
 
+For example, users may not always like products with the most similar ingredients. A user could use a toner to sooth her skin, but use a moisturiser for its whitening effect. Or maybe users use two products have quite different ingredients but from the same brand.
 
-In this post, I will bring you through how to build a recommender system based on:
-* **content-based filtering method**
-* **collaborative filtering method**
-
-Using data from sephora.com, the system recommends a skin care product based on products that a user has liked, or what category of product the user is presently searching for.
-
-
-Here is the outline: 
-1. **Web scraping and data collection**
-2. **Data cleaning and pre-processing**
-3. **Content-based filtering**
-4. **Collaborative filtering**
-5. **Aggregation and recommendation**
-
-In this post, I will walk through the first part and second part.
-
-
-
-## Web craping and data collection
-All data are scraped from [sephora.com](https://www.sephora.com). There are two parts of information are needed to build recommender system:
-
-* **Product basic information**: includes basic product information such as categories, brands, product names, ingredients, prices, sizes, ratings, descriptions and pictures
-* **User reviews**: includes user feedbacks for all products such as user names, ratings, reviews, time and helpfulness
-
-I use [Selenium with python](https://selenium-python.readthedocs.io/), because web pages are not static and need to interact with them.
-
-### (1) Urls for products
-In this post, I choose three categories for skin care products, which are facial cleanser, toners and moisturisers. First, in each category, 
-I scarp links for all selected products and create a dataframe with two features:
-* `Category`: Three product categories
-* `URL`: Product urls
+First, we construct a user-product matrix that tells us all ratings from users for each product. We drop users who only bought one product.
 
 {% highlight python %}
-#step 1 
-#Get url for product in each category
-driver = webdriver.Chrome('./chromedriver')
-#Categories include facial cleanser, toner and moisturizer
-productcat = ['face-wash-facial-cleanser', 'facial-toner-skin-toner', 'moisturizer-skincare']
-#create a dataframe
-df = pd.DataFrame(columns=['Category', 'URL'])
-#urls for all products
-for cat in productcat:
-    driver.get('https://www.sephora.com/shop/'+cat+'?pageSize=300')
-    time.sleep(1)
-    elem = driver.find_element_by_tag_name("body")
-    #scroll page down to deal with lazy-load webpages
-    no_of_pagedowns = 10
-    while no_of_pagedowns:
-        elem.send_keys(Keys.PAGE_DOWN)
-        time.sleep(0.2)
-        no_of_pagedowns-=1
-    #find url
-    pi = driver.find_elements_by_class_name("css-ix8km1")
-    producturl = []
-    for a in pi:
-        subURL = a.get_attribute('href')
-        producturl.append(subURL)    
-    dic = {'Category': cat, 'URL': producturl}
-    df = df.append(pd.DataFrame(dic), ignore_index = True)
+#constract a users vs product matrix, it contains rating products from users
+#fill in 0 if no ratings
+up = pd.pivot_table(review, index='user', columns='id', values='stars').fillna(0)
+#find users who only purchase one product
+l = []
+for i in up.index:
+    s = sum([1 for i in up.loc[i] if i != 0.0])
+    if s < 2:
+        l.append(i)
+#drop
+up.drop(index = l, inplace = True) 
 {% endhighlight %}
 
-### (2) Product informations
-Second, using products urls, I scarp basic informations for all products. The features are 
-* `brand`: Product brand 
-* `name`: Product name
-* `rating`: Overall rating for products
-* `price`: Product price (us dollars) 
-* `descriptions`: Product description
-* `ingredients`: Product full ingredients, a list of chemicals 
-* `pic`: Urls for product pictures 
-* `productsize`: Product size (oz)
-
+Follow up, we are going to do model evaluation with **Surprise**. It allows me to have a better handling of my data and provides various ready-to-use algorithms for recommender system.
 
 {% highlight python %}
-#step 2
-#scrape product brands, names, ratings, prices, descriptions, ingredients and pictures
-df_info = pd.DataFrame(columns=['brand', 'name', 'rating', 'price', 'descriptions', 'ingredients','pic','productsize'])
-df = pd.concat([df, df_info], axis = 1)
-driver = webdriver.Chrome('./chromedriver')
-for i in range(len(df)):
-    driver.get(df.URL[i])
-    time.sleep(5)
-    #close ads window
-    try:
-        driver.find_element_by_class_name('css-fslzaf').click()
-    except ElementNotVisibleException:
-        pass
-    except NoSuchElementException:
-        pass
-    #product brand and name
-    item = driver.find_element_by_class_name('css-a1jw00').text.split('\n')
-    df.brand[i] = item[0]
-    df.name[i] = item[1]    
-    #price
-    df.price[i] = driver.find_element_by_class_name('css-14hdny6').text
-    #descriptions
-    df.descriptions[i]= driver.find_element_by_class_name('css-1rny024').text
-    #one page down
-    elem = driver.find_element_by_tag_name("body")
-    elem.send_keys(Keys.PAGE_DOWN)
-    time.sleep(1)
-    #ingredient
-    #we need to click ingredient tab in product infomation table to get the text
-    driver.find_element_by_id('tab2').click()
-    df.ingredients[i] = driver.find_element_by_id('tabpanel2').text    
-    #scoll down so the website will show rating and review box
-    no_of_pagedowns = 3
-    while no_of_pagedowns:
-        elem = driver.find_element_by_tag_name("body")
-        elem.send_keys(Keys.PAGE_DOWN)
-        time.sleep(1)
-        no_of_pagedowns-=1    
-    #rating 
-    #there may be some product don't have ratings 
-    try:
-        ra = driver.find_element_by_class_name('css-1eqf5yr').text
-        df.rating[i] = float(ra.split(' / ')[0])
-    except NoSuchElementException:
-        df.rating[i] = np.nan    
-    #pic
-    driver.find_element_by_class_name('css-1juuxmf').click()
-    time.sleep(1)
-    df.pic[i] = driver.find_element_by_class_name('css-1glglyy').get_attribute('src')   
-    #productsize
-    try:
-        s = driver.find_element_by_class_name('css-12wl10d').text
-        df.productsize[i] = s    
-    except NoSuchElementException:
-        s = driver.find_element_by_class_name('css-1qf1va5').text
-        df.productsize[i] = s
+#data preparetions
+# set rating_scale param 
+reader = Reader(rating_scale=(1, 5))
+# The columns must correspond to user id, item id and ratings (in that order).
+data = Dataset.load_from_df(review1[['user', 'id', 'stars']], reader)
+#train test split
+trainset, testset = train_test_split(data, test_size = 0.25)
 {% endhighlight %}
 
-### (3) User reviews
-After completing the scraping for product information, we are going to scrape user ratings and reviews. 
+After removing users who only rated one product. I have 44,359 reviews from 17,278 users, which means there are only 2.6 ratings per user in average. Next, construct a user-item matrix with user ratings as values. we need to deal with **Sparse matrix** problem. In other words, we need to fill in all the empty values in user-item matrix. The algorithms used are:
+* **SVD**
+* **SVD++**
 
-However, by default only 6 reviews are shown in product review box, and each additional click reveals 6 more reviews. Given that some products have thousands of reviews, doing the clicking manually would be too tedious!
+### (1) SVD
+SVD is short form for **Singular Value Decomposition**. It decreases the dimension of the utility matrix by extracting its latent factors.
+
+{% highlight python %}
+#Grid Search for the best parameters
+param_grid = {'n_factors':[40, 60], 
+              'n_epochs': [20, 40, 60],
+              'lr_all': [0.002, 0.005],
+              'reg_all': [0.1, 0.4, 0.6]}
+gs = GridSearchCV(SVD, param_grid, measures=['rmse', 'mae'], cv=3)
+gs.fit(data)
+# best RMSE score
+print(gs.best_score['rmse'])
+# combination of parameters that gave the best RMSE score
+print(gs.best_params['rmse'])
+#run the SVD model
+algo = gs.best_estimator['rmse']
+algo.fit(trainset)
+test_pred = algo.test(testset)
+accuracy.rmse(test_pred)
+{% endhighlight %}
+
+Results are:
+**Algorithm | RMSE for Training Set | RMSE for Test Set**
+------------ | ------------- | -------------
+**SVD** | 1.143683 | 1.151032
+
+### (2) SVD++
+SVD++ is an extention to normal SVD. The difference is the extra implicit information. More specifically，user rates an item is in itself an indication of preference.
+
+{% highlight python %}
+#Grid Search for the best parameters
+param_grid = {'n_factors':[40, 60], 'n_epochs': [20, 40], 'lr_all': [0.005, 0.007],
+              'reg_all': [0.2, 0.4, 0.6]}
+gs = GridSearchCV(SVDpp, param_grid, measures=['rmse', 'mae'], cv=3)
+gs.fit(data)
+# best RMSE score
+print(gs.best_score['rmse'])
+# combination of parameters that gave the best RMSE score
+print(gs.best_params['rmse'])
+#after great grid search
+algo = SVDpp(n_factors = 40, n_epochs = 40, lr_all = 0.005, reg_all = 0.2)
+algo.fit(trainset)
+test_pred = algo.test(testset)
+accuracy.rmse(test_pred)
+{% endhighlight %}
+
+Here are results for two method:
+**Algorithm | RMSE for Training Set | RMSE for Test Set**
+------------ | ------------- | -------------
+**SVD** | 1.143683 | 1.151032
+**SVD++** | 1.145048 | 1.150734
+
+From the table above, we find out scores are qiute close for. Thus, I choose SVD since it has a simpler formula and takes less time to run compare to SVD++.
+{% highlight python %}
+up_matrix = up.as_matrix()
+#Performs matrix factorization of the original user item matrix
+U, sigma, Vt = svds(up_matrix , k = 40)
+sigma = np.diag(sigma)
+#reconstruct the matix
+all_user_predicted_ratings = np.dot(np.dot(U, sigma), Vt) 
+#Converting the reconstructed matrix back to a Pandas dataframe
+item_based = pd.DataFrame(all_user_predicted_ratings, columns = up.columns, index=list(up.index)).transpose()
+{% endhighlight %}
+
+Next, use the same method as we did for content-based filtering, construct a similarity matrix for collaborative system.
+
+## Aggregation and Recommendation
+Finally, combine two methods to build a hybrid recommender system. To aggregate the results from both systems, we create a recommender function. 
+1. Input the product you like and the category you are interested
+2. Rank all the products in the category users are looking for for both content based and collaborative systems. 
+3. Add the two ranks together and rearrange them in an ascending order. If the rankings are the same for two products, we will take into account the repurchase rate. A product that has a higher repurchase rate will receive a higher ranking compared to another.
+4. Show top 10 recommendations.
+
+{% highlight python %}
+def recommender(cat, product_name):
+    product_id = df[df.full_name == product_name].index[0]
+    #index of products from desired category
+    cat_in = df[df.Category == cat].index    
+    #rank product by similarity, lower the ranking number, higher the similarity
+    content_rank = content.iloc[product_id,cat_in].rank(ascending=False, method='min')
+    collab_rank = collab.iloc[product_id,cat_in].rank(ascending=False, method='min')
+    #aggregate two rankings to get overall rankings
+    rank = content_rank + collab_rank
+    #sort rankings with ascending orders, products on top will most likely be recommended
+    rank = rank.sort_values()[1:]
+    #for products have same rankings after aggragation, we will take into account the repurchase rate.
+    re_one = rank[rank.duplicated()]
+    re_all = rank[rank.duplicated(keep=False)]
+    
+    for i in re_one:
+        list_index = []
+        list_num = []
+        for e in re_all.index:
+            if i == re_all[e]:
+                list_index.append(e)
+                list_num.append(int(e))
+        r = repurchase.loc[list_num,'rate'].rank(ascending = False,method = 'min')
+        rank[list_index] = rank[list_index] + list(0.01*r)              
+    #show the top 10 products' infomation  
+    result = df.iloc[list(rank.sort_values()[:10].index)] 
+    #show cosine similarity score for both content base and collaborative
+    content_sim = list(content.iloc[product_id,list(result.index)])
+    collab_sim = list(collab.iloc[product_id,list(result.index)])
+    result.loc[:,'content_sim'] = content_sim
+    result.loc[:,'collab_sim'] = collab_sim
+    final = result[['full_name','brand','content_sim','collab_sim']]
+    return final
+{% endhighlight %}
+
+Finally, I use Heroku to deply the recommender system.
+
 <figure>
-  <a href="https://miro.medium.com/max/3972/1*0DjcD6zyy6AH1ttCeHistQ.png"><img src="https://miro.medium.com/max/3972/1*0DjcD6zyy6AH1ttCeHistQ.png"></a>
-  <figcaption><a>A typical user review</a></figcaption>
+  <a href="/assets/img/heroku.png"><img src="/assets/img/heroku.png"></a>
+  <figcaption><a href="https://skin123.herokuapp.com/home">Skin123!</a></figcaption>
 </figure>
-Being a clever data scientist, I wrote a function to automate the clicking until all reviews were revealed :)
-Also, since some reviews may have missing information like headers, we filled in all blank fields with NaN to ensure that each column has same length.
 
-{% highlight python %}
-def click(x): 
-    try:
-        driver.find_element_by_class_name(x).click()
-        time.sleep(0.2)
-        click(x)
-    except ElementNotVisibleException:
-        driver.find_element_by_class_name('css-fslzaf').click()
-        click(x)
-    except NoSuchElementException:
-        pass
-    
-def fillin(rawlist,infolist):
-    for i in range(len(infolist)):
-        if str(infolist[i]) in str(rawlist[i]):
-            pass
-        else:
-            infolist.insert(i,np.nan)
-    while len(infolist) < len(rawlist):
-        infolist.append(np.nan) 
-{% endhighlight %}
-
-Next, I will use `URL` again to scrap user reviews for all products and save them to a dataframe. For this dataset, it consists features which are:
-* `Category`: Three product categories
-* `brand`: Product brand 
-* `name`: Product name
-* `user`: User name
-* `stars`: User rating, range from 1 to 5
-* `short_review`: User's short review, usually just one sentence
-* `long_review`: User's full review
-* `helpfulness`: helpfulness of review, voted by other users
-* `time`: Time posted
-
-{% highlight python %}
-review = pd.DataFrame(columns=['Category','brand', 'name', 'user', 'stars','short_review', 'long_review','helpfulness','time'])
-driver = webdriver.Chrome('./chromedriver')
-for i in range(len(df)):
-    driver.get(df.URL[i])
-    time.sleep(4)     
-    #create a dataframe
-    df_review = pd.DataFrame(columns=['Category','brand', 'name', 'user', 'stars','short_review', 'long_review','helpfulness','time'])
-    #scroll page down and let review boxes show
-    no_of_pagedowns = 5
-    while no_of_pagedowns:
-        elem = driver.find_element_by_tag_name("body")
-        elem.send_keys(Keys.PAGE_DOWN)
-        time.sleep(0.5)
-        no_of_pagedowns-=1
-    time.sleep(4)
-    start_time = time.time()
-    click('css-1phfyoj')
-    print(time.time()-start_time)
-    #user profile
-    up = [e.text for e in driver.find_elements_by_class_name('css-81z9n1')][1:-2]   
-    #user review
-    ur = [e.text for e in driver.find_elements_by_class_name('css-12yc2vd')]    
-    #user name
-    name =  [e.text for e in driver.find_elements_by_class_name('css-10n46hy')]
-    #fill in missing user name with nan
-    fillin(up,name)    
-    #get stars 
-    stars = [int(e.get_attribute('aria-label')[0]) for e in driver.find_elements_by_class_name('css-5quttm')]    
-    #short review
-    sr = [e.text for e in driver.find_elements_by_class_name('css-ai9pjd')]
-    #fill in missing values with nan
-    fillin(ur,sr)    
-    #long review
-    lr = [e.text for e in driver.find_elements_by_class_name('css-1p4f59m')]    
-    #helpfulness 
-    h = [e.text for e in driver.find_elements_by_class_name('css-39esqn')]
-    helpfulness=[int(re.findall('(\d+)',e)[1]) for e in h] 
-    #time posted
-    t = [e.text for e in driver.find_elements_by_class_name('css-1mfxbmj')]
-    
-    df_review.user = name
-    df_review.stars = stars
-    df_review.short_review = sr
-    df_review.long_review = lr
-    df_review.helpfulness = helpfulness
-    df_review.time = t    
-    df_review.loc[:,'Category'] = df.Category[i]
-    df_review.loc[:,'brand'] = df.brand[i]
-    df_review.loc[:,'name'] = df.name[i]    
-    review = pd.concat([review,df_review])
-{% endhighlight %}
-
-
-
-## Data cleaning and pre-processing
-Now that we have collected the data, the next step would be cleaning and pre-processing!
-### (1) Product information
-* drop bundled products, and those with NaN fields,
-* remove the “$” sign to convert price to float,
-* find products have identical names and reassign them to a new name,
-* manually fill in sizes and ingredients for some products and clean them.
-
-In order to compare prices for products better, we create a new feature:
-`price_oz`: product price per oz
-{% highlight python %}
-#based on size and price of product, add a new column price per oz called price_oz
-price=[]
-for i in index:
-    num = df.price[i]/df.oz[i]
-    price.append(num)
-df = df.assign(price_oz = price)
-{% endhighlight %}
-
-### (2) User review
-For user reviews, we drop rows that have no user name, missing review field, and duplicate entries. Also, we add a new column for each review:
-`id`: Product id, which is the index number for product ininformation dataset
-{% highlight python %}
-#drop rows that dont have username or reviews
-review.dropna(subset=['user', 'long_review'], inplace = True)
-#drop deplicated reviews
-review.drop_duplicates(subset = ['long_review'],inplace = True)
-#assign id number to each review
-l = []
-n = 0
-for i in range(len(review)):
-    try:
-        if review.name[i] == review.name[i+1]:
-            l.append(n)
-        else:
-            l.append(n)
-            n = n+1
-    except KeyError:
-        l.append(n)
-review['id'] = l
-{% endhighlight %}
-
-After completing data cleaning, we have a total of **281** products from **three** categories and **137,685** reviews from **110,604** users.
-
-### (3) Repurchase rate
-Based on user review dataset, we calculate the **repurchase rate**. Repurchase rate is a strong indication of user satisfaction with the product.
-
-* `Product`: Product name
-* `total`: Total number of purchase
-* `repurchse`: Number of repurchase orders
-* `rate`: Repurchase rate
-
-{% highlight python %}
-l = []
-l1 = []
-l2 = []
-l3 = []
-for i in range(281):
-    frequency = review[review.id == i].user.value_counts()
-    total = len(frequency)
-    repurchase = sum([1 for i in frequency if i >1])
-    rate = repurchase/total
-    name = list(review[review.id == i].full_name)[0]   
-    l.append(name)
-    l1.append(total)
-    l2.append(repurchase)
-    l3.append(rate)    
-df_repurchase = pd.DataFrame({'product': l, 'total':l1,'repurchase': l2, 'rate': l3})
-{% endhighlight %}
-
-
-In this post, I talked about data collection and data cleaning. I will continue rest of parts on how to build a hybrid recommender system for skin care products.
+For more information, please check my [Github](https://github.com/QiuQiuJing/Capstone) post.
 
 
 
