@@ -16,9 +16,65 @@ Content-based filtering allows the discovery of similarity between products base
 To build a content-based filtering system, we first create our own scoring system based on product **ingredients** and **price**. The features are:
 
 <figure>
-  <a href="assets/img/8features.png"><img src="assets/img/8features.png"></a>
+  <a href="/assets/img/8features.png"><img src="/assets/img/8features.png"></a>
   <figcaption><a>8 features for content-based filtering method</a></figcaption>
 </figure>
+
+For ingredient related features, first I search for lists of chemicals that provides certain types of effect. For example, glucose provides moisturizing effect, vitamin C provides whitening effect. Then, I compiled all chemicals in a table:
+
+<figure>
+  <a href="https://miro.medium.com/max/792/1*N2lHAHtuUV5vAwj7OmVRpA.png"><img src="https://miro.medium.com/max/792/1*N2lHAHtuUV5vAwj7OmVRpA.png"></a>
+  <figcaption><a>table of chemicals</a></figcaption>
+</figure>
+
+### (1) NLP
+Since the ingredients of products could come in full chemical names or abbreviated forms, we use **NLP** to tokenise them. we have two approaches: 
+* unigram 
+* combination of unigram and bigram.
+
+{% highlight python %}
+#method 1 unigram
+for i in range(len(feature_list)):
+    chem = df2[df2.feature == feature_list[i]].chemicals
+    l = []
+    for c in chem:
+        l=l+tokenizer.tokenize(c.lower())
+        df_feature.chemicals_uni[i] = l
+#method 2 combination of unigram and bigram
+for i in range(len(feature_list)):
+    chem = df2[df2.feature == feature_list[i]].chemicals
+    l = []
+    for c in chem:
+        if ' ' in c:
+            bigrams = ngrams(c.lower().split(), 2)
+            l.extend(bigrams)
+        else:
+            l.append(c.lower())
+    df_feature.chemicals_unibi[i] = l
+{% endhighlight %}
+
+after trying both approaches, we find that unigram is more suitable for some features while a combination of unigram and bigram is better for others. For example, *cleanliness* is better represented with the second approach.
+
+<figure>
+  <a href="https://miro.medium.com/max/2676/1*BpZ9l5ilYqbCXxHwxElPlg.png"><img src="https://miro.medium.com/max/2676/1*BpZ9l5ilYqbCXxHwxElPlg.png"></a>
+  <figcaption><a>cleanliness score for combination of unigram and bigram</a></figcaption>
+</figure>
+
+
+
+
+
+
+
+
+
+
+From that, we construct features scores for all the products using **Jaccard similarity**. Note that the order of ingredients matters. The chemicals that appear first have higher concentrations in the products.
+
+{% highlight python %}
+
+
+
 
 
 
