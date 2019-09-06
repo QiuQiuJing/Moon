@@ -206,9 +206,10 @@ accuracy.rmse(test_pred)
 {% endhighlight %}
 
 Results are:
-Algorithm | RMSE for Training Set | RMSE for Test Set
-----------| ----------------------| -----------------
-**SVD** | 1.143683 | 1.151032
+
+| Algorithm | RMSE for Training Set | RMSE for Test Set |
+| :------: | :------: | :------: |
+|  **SVD**  | 1.143683 | 1.151032 |
 
 ### (2) SVD++
 SVD++ is an extention to normal SVD. The difference is the extra implicit information. More specifically，user rates an item is in itself an indication of preference.
@@ -232,10 +233,10 @@ accuracy.rmse(test_pred)
 
 Here are results for two method:
 
-| Algorithm | RMSE for Training Set |   RMSE for Test Set   |
-| --------- | --------------------- | --------------------- |
-|  **SVD**  |       1.143683        |        1.151032       |
-| **SVD++** |       1.145048        |        1.150734       |
+| Algorithm | RMSE for Training Set | RMSE for Test Set |
+| :------: | :------: | :------: |
+|  **SVD**  | 1.143683 | 1.151032 |
+| **SVD++** | 1.145048 | 1.150734 |
 
 
 From the table above, we find out scores are qiute close for. Thus, I choose SVD since it has a simpler formula and takes less time to run compare to SVD++.
